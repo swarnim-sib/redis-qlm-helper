@@ -1,44 +1,5 @@
 const Redis = require("ioredis");
-
-const redisURIs = {
-  'local': {"host": "localhost:6379"},
-  'prod': {
-    "host": [
-      {
-        "host": "srv-pr-ramdb1-dc3.prod.illiad.51b.tech",
-        "port": 16379
-      },
-      {
-        "host": "srv-pr-ramdb3-dc2.prod.illiad.51b.tech",
-        "port": 16379
-      },
-      {
-        "host": "srv-pr-ramdb4-dc2.prod.illiad.51b.tech",
-        "port": 16379
-      }
-    ],
-    "password": "yorHafdekjamHilyoofnucBifu",
-    "name": "prod-fpc-sendmail",
-  },
-  'staging': {
-    "host": [
-      {
-        "host": "sentinel-srv-inst-st-redis1.51b.tech",
-        "port": 16379
-      },
-      {
-        "host": "sentinel-srv-inst-st-redis2.51b.tech",
-        "port": 16379
-      },
-      {
-        "host": "sentinel-srv-inst-st-redis3.51b.tech",
-        "port": 16379
-      }
-    ],
-    "password": "KapemIjtap",
-    "name": "st-redis-sendmail"
-  },
-}
+const redisURIs = require("./redis_config.json")
 
 const createRedisConnection = (env) => new Promise((resolve, reject) => {
   try {
