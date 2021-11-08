@@ -46,15 +46,35 @@ const createRedisConnection = (env) => new Promise((resolve, reject) => {
 })
 
 const getAllMetaList = async (redisConn) => {
-  const keys = await redisConn.keys("*")
+  const keys = await redisConn.keys("metadata_*")
   return keys
+}
+
+const getMetaRelevantInfo = async (redisConn, metaKey) => {
+  const allParts = await redisConn.hgetall(metaKey)
+  let metaOtherKeyLen = Object.keys(allParts).length
+  if (allParts.active_consumers) {
+    metaOtherKeyLen -= 1
+  }
+  if (allParts.expected_consumers) {
+    metaOtherKeyLen -= 1
+  }
+  console.log(`${metaKey} : AC: ${allParts.active_consumers}, EC: ${allParts.expected_consumers}, KEYMAP: ${metaOtherKeyLen}`);
 }
 
 const testFn = async () => {
   const env = process.env.NODE_ENV
   const redisConn = await createRedisConnection(env)
   const metaKeys = await getAllMetaList(redisConn)
-  console.log(metaKeys);
+
+  if (metaKeys.length) {
+    await Promise.all(
+      metaKeys.map(async mk => {
+        await getMetaRelevantInfo(redisConn, mk)
+      })
+    )
+  }
+  return
 }
 
 testFn()
