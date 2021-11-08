@@ -3,6 +3,7 @@ const redisURIs = require("./redis_config.json")
 
 let incorr = []
 let corr = []
+let crit = []
 
 const createRedisConnection = (env) => new Promise((resolve, reject) => {
   try {
@@ -62,7 +63,15 @@ const getMetaRelevantInfo = async (redisConn, metaKey) => {
   if (allParts.expected_consumers) {
     metaOtherKeyLen -= 1
   }
-  if (parseInt(allParts.active_consumers) !== metaOtherKeyLen) {
+  const cons = parseInt(allParts.active_consumers)
+  if (cons < metaOtherKeyLen) {
+    crit.push({
+      key: metaKey,
+      ac: allParts.active_consumers,
+      ec: allParts.expected_consumers,
+      km: metaOtherKeyLen
+    })
+  } else if (cons !== metaOtherKeyLen) {
     incorr.push({
       key: metaKey,
       ac: allParts.active_consumers,
@@ -91,6 +100,12 @@ const testFn = async () => {
         await getMetaRelevantInfo(redisConn, mk)
       })
     ).then(() => {
+      console.log("CRITICAL TO CHECK --------> ( " , crit.length, " )");
+      crit.forEach((data) => {
+        console.log(`${data.key} : AC: ${data.ac}, EC: ${data.ec}, KEYMAP: ${data.km}`);
+      })
+      console.log("\n\n");
+
       console.log("INCORRECT / TO CHECK --------> ( " , incorr.length, " )");
       incorr.forEach((data) => {
         console.log(`${data.key} : AC: ${data.ac}, EC: ${data.ec}, KEYMAP: ${data.km}`);
