@@ -49,8 +49,8 @@ const createRedisConnection = (env) => new Promise((resolve, reject) => {
   return false
 })
 
-const getAllMetaList = async (redisConn) => {
-  const keys = await redisConn.keys("metadata_*")
+const getKeys = async (redisConn, pattern) => {
+  const keys = await redisConn.keys(pattern)
   return keys
 }
 
@@ -92,7 +92,7 @@ const getMetaRelevantInfo = async (redisConn, metaKey) => {
 const testFn = async () => {
   const env = process.env.NODE_ENV
   const redisConn = await createRedisConnection(env)
-  const metaKeys = await getAllMetaList(redisConn)
+  const metaKeys = await getKeys(redisConn, "metadata_*")
 
   if (metaKeys.length) {
     await Promise.all(
@@ -122,4 +122,37 @@ const testFn = async () => {
   return
 }
 
-testFn()
+const findStuckMessages = async () => {
+  const env = process.env.NODE_ENV
+  const redisConn = await createRedisConnection(env)
+  const clientKeys = await getKeys(redisConn, "*:*[0-9]")
+
+  if (clientKeys.length) {
+    await Promise.all(
+      clientKeys.map(async clientQueue => {
+        const len = await redisConn.llen(clientQueue)
+        return len
+      })
+    ).then((result) => {
+      let msgCount = 0
+      result.forEach(r => {
+        msgCount += r
+      })
+      console.log("Pending messages are: ", msgCount);
+    })
+  }
+}
+
+const processDef = () => {
+  const p = process.argv[2]
+  switch (p) {
+    case "pending-msg": 
+      findStuckMessages()
+      return
+
+    default:
+      testFn()
+  }
+}
+
+processDef()
